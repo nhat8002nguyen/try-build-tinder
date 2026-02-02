@@ -1,0 +1,90 @@
+# Ignore files and directories for Docker builds
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# Documentation
+README.md
+*.md
+TESTING.md
+API_DOCUMENTATION.md
+
+# Environment files (will be mounted separately)
+.env
+.env.local
+.env.development
+.env.test
+*.env
+
+# Frontend
+frontend/
+node_modules/
+
+# Test files
+*_test.go
+*_test.*.go
+**/*_test.go
+testdata/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# Build artifacts (local)
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+main
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Git
+.git/
+.gitignore
+
+# Docker
+docker-compose*.yml
+Dockerfile.dev
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Backup and data
+backups/
+uploads/
+*.sql
+*.sql.gz
+*.tar.gz
+*.zip
+
+# Coverage
+coverage.txt
+coverage.html
+*.out
+
+# Deployment scripts (not needed in container)
+deploy/
+scripts/

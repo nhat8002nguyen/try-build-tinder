@@ -1,0 +1,641 @@
+{
+	"info": {
+		"name": "Spark - Tinder Clone API",
+		"description": "Complete API collection for Spark dating app with authentication, user profiles, discovery, swipes, matches, and messaging",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refreshToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('accessToken', response.data.tokens.access_token);",
+									"    pm.collectionVariables.set('refreshToken', response.data.tokens.refresh_token);",
+									"    pm.collectionVariables.set('userId', response.data.user.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123\",\n  \"name\": \"John Doe\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Register a new user account with email, password, and name"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('accessToken', response.data.tokens.access_token);",
+									"    pm.collectionVariables.set('refreshToken', response.data.tokens.refresh_token);",
+									"    pm.collectionVariables.set('userId', response.data.user.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Login with email and password to get access and refresh tokens"
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('accessToken', response.data.access_token);",
+									"    pm.collectionVariables.set('refreshToken', response.data.refresh_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/refresh",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "refresh"]
+						},
+						"description": "Refresh access token using refresh token"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "me"]
+						},
+						"description": "Get currently authenticated user information"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints for user registration, login, and token management"
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{userId}}"
+								}
+							]
+						},
+						"description": "Get user profile by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"gender\": \"male\",\n  \"birthdate\": \"1995-05-15T00:00:00Z\",\n  \"bio\": \"Love hiking and coffee!\",\n  \"preferences\": {\n    \"min_age\": 22,\n    \"max_age\": 35,\n    \"max_distance\": 50,\n    \"gender_preference\": [\"female\"]\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "me"]
+						},
+						"description": "Update current user's profile information"
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Photo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "photo",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/me/photos",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "me", "photos"]
+						},
+						"description": "Upload a profile photo (max 6 photos, 5MB per photo)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Photo",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/me/photos/:photoId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "me", "photos", ":photoId"],
+							"variable": [
+								{
+									"key": "photoId",
+									"value": "photo-uuid-here"
+								}
+							]
+						},
+						"description": "Delete a profile photo by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Location",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"latitude\": 37.7749,\n  \"longitude\": -122.4194\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/me/location",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "me", "location"]
+						},
+						"description": "Update user's current location (San Francisco in this example)"
+					},
+					"response": []
+				}
+			],
+			"description": "User profile management endpoints"
+		},
+		{
+			"name": "Discovery",
+			"item": [
+				{
+					"name": "Get Potential Matches",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/discover?limit=10&min_age=22&max_age=35&max_distance=50&gender_preference=female",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "discover"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Number of results (max 50)"
+								},
+								{
+									"key": "min_age",
+									"value": "22",
+									"description": "Minimum age filter"
+								},
+								{
+									"key": "max_age",
+									"value": "35",
+									"description": "Maximum age filter"
+								},
+								{
+									"key": "max_distance",
+									"value": "50",
+									"description": "Maximum distance in kilometers"
+								},
+								{
+									"key": "gender_preference",
+									"value": "female",
+									"description": "Comma-separated: male,female,other"
+								}
+							]
+						},
+						"description": "Get potential matches based on user preferences and location"
+					},
+					"response": []
+				}
+			],
+			"description": "Discovery system for finding potential matches"
+		},
+		{
+			"name": "Swipes",
+			"item": [
+				{
+					"name": "Create Swipe (Like)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"target_id\": \"target-user-uuid-here\",\n  \"direction\": \"like\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/swipes",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "swipes"]
+						},
+						"description": "Swipe right (like) on a user. Returns is_match=true if mutual like"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Swipe (Dislike)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"target_id\": \"target-user-uuid-here\",\n  \"direction\": \"dislike\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/swipes",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "swipes"]
+						},
+						"description": "Swipe left (dislike) on a user"
+					},
+					"response": []
+				}
+			],
+			"description": "Swipe actions (like/dislike) on potential matches"
+		},
+		{
+			"name": "Matches",
+			"item": [
+				{
+					"name": "Get All Matches",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/matches",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matches"]
+						},
+						"description": "Get all matches for the current user"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Match Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/matches/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matches", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "match-uuid-here"
+								}
+							]
+						},
+						"description": "Get details of a specific match"
+					},
+					"response": []
+				}
+			],
+			"description": "Match management endpoints"
+		},
+		{
+			"name": "Messages",
+			"item": [
+				{
+					"name": "Get Messages",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/matches/:id/messages?limit=50&offset=0",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matches", ":id", "messages"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "50",
+									"description": "Number of messages (max 100)"
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Offset for pagination"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "match-uuid-here"
+								}
+							]
+						},
+						"description": "Get messages from a specific match. Automatically marks messages as read."
+					},
+					"response": []
+				},
+				{
+					"name": "Send Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"Hey! How are you?\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/matches/:id/messages",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matches", ":id", "messages"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "match-uuid-here"
+								}
+							]
+						},
+						"description": "Send a message to a match. Content must be 1-1000 characters."
+					},
+					"response": []
+				}
+			],
+			"description": "Messaging endpoints for chatting with matches"
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Get Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications?limit=20&offset=0",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Number of notifications (max 50)"
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Offset for pagination"
+								}
+							]
+						},
+						"description": "Get user notifications with unread count"
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Notification as Read",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/:id/read",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications", ":id", "read"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "notification-uuid-here"
+								}
+							]
+						},
+						"description": "Mark a specific notification as read"
+					},
+					"response": []
+				}
+			],
+			"description": "Notification management endpoints"
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["health"]
+						},
+						"description": "Check if the server is running"
+					},
+					"response": []
+				}
+			],
+			"description": "Server health check endpoint"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	}
+}

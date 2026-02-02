@@ -1,0 +1,54 @@
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.tar.gz
+*.zip
+
+# Backend uploads (user-generated)
+backend/uploads/
+
+# Private keys and certificates
+*.pem
+*.key
+*.crt
+!**/*.example
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and temp
+logs/
+*.log
+tmp/
+temp/
+*.tmp
+
+# Go
+*.exe
+*.test
+*.out
+vendor/
+
+# Test and coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# Docker
+.docker/
