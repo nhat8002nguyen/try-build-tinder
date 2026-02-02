@@ -45,6 +45,8 @@ if [ ! -f ".env.production" ]; then
     exit 1
 fi
 
+COMPOSE_CMD="docker compose --env-file .env.production -f docker-compose.prod.yml"
+
 set -a
 source .env.production
 set +a
@@ -81,23 +83,23 @@ if [ "$(docker ps -q -f name=tinder_)" ]; then
 fi
 
 print_step "3/8 - Stopping existing containers..."
-docker compose -f docker-compose.prod.yml down || true
+$COMPOSE_CMD down || true
 
 print_step "4/8 - Pruning old Docker resources..."
 docker system prune -f --volumes=false || true
 
 print_step "5/8 - Building Docker images..."
-docker compose -f docker-compose.prod.yml build --no-cache
+$COMPOSE_CMD build --no-cache
 
 print_step "6/8 - Starting services..."
-docker compose -f docker-compose.prod.yml up -d
+$COMPOSE_CMD up -d
 
 print_step "7/8 - Waiting for services to be healthy..."
 sleep 10
 
 RETRIES=30
 for i in $(seq 1 $RETRIES); do
-    if docker compose -f docker-compose.prod.yml ps | grep -q "healthy"; then
+    if $COMPOSE_CMD ps | grep -q "healthy"; then
         print_info "Services are starting up... ($i/$RETRIES)"
         sleep 2
     else
@@ -148,14 +150,14 @@ print_info "Deployment Complete!"
 echo "=========================================="
 echo ""
 print_info "Service Status:"
-docker compose -f docker-compose.prod.yml ps
+$COMPOSE_CMD ps
 echo ""
-print_info "Useful Commands:"
-echo "  - View logs: docker compose -f docker-compose.prod.yml logs -f"
-echo "  - View backend logs: docker compose -f docker-compose.prod.yml logs -f backend"
-echo "  - View nginx logs: docker compose -f docker-compose.prod.yml logs -f nginx"
-echo "  - Stop services: docker compose -f docker-compose.prod.yml down"
-echo "  - Restart services: docker compose -f docker-compose.prod.yml restart"
+print_info "Useful Commands (run from deploy/ directory):"
+echo "  - View logs: $COMPOSE_CMD logs -f"
+echo "  - View backend logs: $COMPOSE_CMD logs -f backend"
+echo "  - View nginx logs: $COMPOSE_CMD logs -f nginx"
+echo "  - Stop services: $COMPOSE_CMD down"
+echo "  - Restart services: $COMPOSE_CMD restart"
 echo ""
 
 if [ -z "$DOMAIN_NAME" ] || [ "$DOMAIN_NAME" == "your-domain.com" ]; then

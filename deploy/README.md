@@ -372,15 +372,17 @@ These messages appear when extracting a tarball created on macOS (it includes ex
 ### Services Not Starting
 
 ```bash
-# Check logs
-docker compose -f /opt/tinder-app/deploy/docker-compose.prod.yml logs
+cd /opt/tinder-app/try-build-tinder/deploy   # or your deploy path
+
+# Check logs (use --env-file so variables are set)
+docker compose --env-file .env.production -f docker-compose.prod.yml logs -f
 
 # Check container status
 docker ps -a
 
 # Restart services
-docker compose -f /opt/tinder-app/deploy/docker-compose.prod.yml down
-docker compose -f /opt/tinder-app/deploy/docker-compose.prod.yml up -d
+docker compose --env-file .env.production -f docker-compose.prod.yml down
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 ```
 
 ### SSL Certificate Issues
@@ -399,15 +401,42 @@ docker compose -f /opt/tinder-app/deploy/docker-compose.prod.yml restart nginx
 ### Database Connection Issues
 
 ```bash
-# Check PostgreSQL logs
-docker compose -f /opt/tinder-app/deploy/docker-compose.prod.yml logs postgres
+# From deploy/ directory, always pass env file for variable substitution
+cd /opt/tinder-app/try-build-tinder/deploy
+docker compose --env-file .env.production -f docker-compose.prod.yml logs postgres
 
 # Connect to database
-docker compose -f /opt/tinder-app/deploy/docker-compose.prod.yml exec postgres psql -U postgres -d tinder_clone
+docker compose --env-file .env.production -f docker-compose.prod.yml exec postgres psql -U postgres -d tinder_clone
 
 # Check connections
-docker compose -f /opt/tinder-app/deploy/docker-compose.prod.yml exec postgres psql -U postgres -c "SELECT count(*) FROM pg_stat_activity;"
+docker compose --env-file .env.production -f docker-compose.prod.yml exec postgres psql -U postgres -c "SELECT count(*) FROM pg_stat_activity;"
 ```
+
+### "password authentication failed for user postgres" / Variables not set
+
+If you see `POSTGRES_PASSWORD variable is not set` or backend fails with "password authentication failed for user postgres":
+
+1. **Use the env file with Compose**  
+   Always run docker compose from the `deploy/` directory and pass the env file:
+   ```bash
+   cd /opt/tinder-app/try-build-tinder/deploy
+   docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+   ```
+   Use the same `--env-file .env.production` for logs, exec, down, etc.
+
+2. **If you changed `POSTGRES_PASSWORD` after the first deploy**  
+   Postgres initializes the data volume only on first run. The existing volume still has the old password. Either:
+   - **Reset and re-deploy** (erases DB data):
+     ```bash
+     cd /opt/tinder-app/try-build-tinder/deploy
+     docker compose --env-file .env.production -f docker-compose.prod.yml down
+     docker volume rm deploy_postgres_data
+     ./scripts/deploy.sh
+     ```
+   - Or change the postgres user password inside the running container to match your new `.env.production` (see Postgres docs).
+
+3. **Passwords with special characters**  
+   In `.env.production`, put values in double quotes if they contain `$`, `#`, or spaces, e.g. `POSTGRES_PASSWORD="my$ecure#pass"`.
 
 ### Rate Limiting Too Aggressive
 
