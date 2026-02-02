@@ -74,7 +74,7 @@ if [ "$confirm" != "yes" ]; then
     exit 0
 fi
 
-print_step "1/5 - Testing domain resolution..."
+print_step "1/4 - Testing domain resolution..."
 RESOLVED_IP=$(dig +short "$DOMAIN_NAME" | tail -n1)
 SERVER_IP=$(curl -s ifconfig.me)
 
@@ -96,17 +96,10 @@ if [ "$RESOLVED_IP" != "$SERVER_IP" ]; then
     fi
 fi
 
-print_step "2/5 - Switching to HTTP-only nginx configuration..."
-if [ -f "./nginx/conf.d/default.conf" ]; then
-    mv ./nginx/conf.d/default.conf ./nginx/conf.d/default.conf.https.backup
-fi
-cp ./nginx/conf.d/http-only.conf ./nginx/conf.d/default.conf
+COMPOSE_CMD="docker compose --env-file .env.production -f docker-compose.prod.yml"
 
-docker compose -f docker-compose.prod.yml restart nginx
-sleep 3
-
-print_step "3/5 - Obtaining SSL certificate from Let's Encrypt..."
-docker compose -f docker-compose.prod.yml run --rm certbot certonly \
+print_step "2/4 - Obtaining SSL certificate from Let's Encrypt..."
+$COMPOSE_CMD run --rm certbot certonly \
     --webroot \
     --webroot-path=/var/www/certbot \
     --email "$EMAIL_FOR_SSL" \
@@ -117,25 +110,15 @@ docker compose -f docker-compose.prod.yml run --rm certbot certonly \
 if [ $? -ne 0 ]; then
     print_error "Failed to obtain SSL certificate"
     print_error "Please check the error messages above"
-    
-    if [ -f "./nginx/conf.d/default.conf.https.backup" ]; then
-        mv ./nginx/conf.d/default.conf.https.backup ./nginx/conf.d/default.conf
-    fi
-    
     exit 1
 fi
 
-print_step "4/5 - Updating nginx configuration to use SSL..."
-if [ -f "./nginx/conf.d/default.conf.https.backup" ]; then
-    mv ./nginx/conf.d/default.conf.https.backup ./nginx/conf.d/default.conf
-else
-    print_warning "Backup HTTPS config not found, using current default.conf"
-fi
-
+print_step "3/4 - Switching nginx to SSL configuration..."
+cp ./nginx/conf.d/default-ssl.conf ./nginx/conf.d/default.conf
 sed -i "s/your-domain.com/$DOMAIN_NAME/g" ./nginx/conf.d/default.conf
 
-print_step "5/5 - Reloading nginx with SSL configuration..."
-docker compose -f docker-compose.prod.yml restart nginx
+print_step "4/4 - Reloading nginx with SSL configuration..."
+$COMPOSE_CMD restart nginx
 sleep 3
 
 echo ""
@@ -150,14 +133,14 @@ if curl -f https://"$DOMAIN_NAME"/health > /dev/null 2>&1; then
     print_info "✓ HTTPS is working correctly!"
 else
     print_warning "HTTPS test failed. Please check nginx logs:"
-    print_info "  docker compose -f docker-compose.prod.yml logs nginx"
+    print_info "  $COMPOSE_CMD logs nginx"
 fi
 
 echo ""
 print_info "Your application is now accessible at: https://$DOMAIN_NAME"
 echo ""
 print_info "SSL Certificate Details:"
-docker compose -f docker-compose.prod.yml run --rm certbot certificates
+$COMPOSE_CMD run --rm certbot certificates
 echo ""
 print_info "Certificate auto-renewal is enabled"
 print_info "Certificates will be automatically renewed every 12 hours"
