@@ -110,25 +110,29 @@ done
 print_step "8/8 - Verifying deployment..."
 echo ""
 
-if docker ps | grep -q "tinder_nginx.*Up"; then
+container_status() {
+    docker ps -a --filter "name=$1" --format "{{.Status}}" | head -n1
+}
+
+if container_status "tinder_nginx" | grep -q "^Up"; then
     print_info "✓ Nginx is running"
 else
     print_error "✗ Nginx is not running"
 fi
 
-if docker ps | grep -q "tinder_backend.*Up"; then
+if container_status "tinder_backend" | grep -q "^Up"; then
     print_info "✓ Backend is running"
 else
     print_error "✗ Backend is not running"
 fi
 
-if docker ps | grep -q "tinder_postgres.*Up"; then
+if container_status "tinder_postgres" | grep -q "^Up"; then
     print_info "✓ PostgreSQL is running"
 else
     print_error "✗ PostgreSQL is not running"
 fi
 
-if docker ps | grep -q "tinder_redis.*Up"; then
+if container_status "tinder_redis" | grep -q "^Up"; then
     print_info "✓ Redis is running"
 else
     print_error "✗ Redis is not running"
