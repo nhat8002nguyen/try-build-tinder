@@ -35,7 +35,13 @@ fi
 
 CERT_PATH="/etc/letsencrypt/live/$DOMAIN_NAME/fullchain.pem"
 if ! $COMPOSE_CMD exec -T nginx test -f "$CERT_PATH" 2>/dev/null; then
-    echo -e "${RED}[ERROR]${NC} SSL cert not found at $CERT_PATH. Run setup-ssl.sh first to obtain certs."
+    echo -e "${RED}[ERROR]${NC} SSL cert not found at $CERT_PATH"
+    echo ""
+    echo "Existing certs (if any):"
+    $COMPOSE_CMD exec -T nginx ls -la /etc/letsencrypt/live/ 2>/dev/null || true
+    echo ""
+    echo "To obtain a cert for $DOMAIN_NAME, run: ./scripts/setup-ssl.sh"
+    echo "  (Requires: DNS A record for $DOMAIN_NAME pointing to this server, ports 80 and 443 open.)"
     exit 1
 fi
 
