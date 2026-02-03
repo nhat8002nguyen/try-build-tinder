@@ -14,6 +14,12 @@ DEPLOY_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$DEPLOY_DIR"
 
+if [ -f ".env.production" ]; then
+    COMPOSE_CMD="docker compose --env-file .env.production -f docker-compose.prod.yml"
+else
+    COMPOSE_CMD="docker compose -f docker-compose.prod.yml"
+fi
+
 clear
 echo "=========================================="
 echo "   Application Monitoring Dashboard"
@@ -21,7 +27,7 @@ echo "=========================================="
 echo ""
 
 echo -e "${BLUE}=== Container Status ===${NC}"
-docker compose -f docker-compose.prod.yml ps
+$COMPOSE_CMD ps
 echo ""
 
 echo -e "${BLUE}=== Resource Usage ===${NC}"
@@ -55,7 +61,7 @@ echo ""
 
 echo -e "${BLUE}=== Recent Logs ===${NC}"
 echo "Backend (last 10 lines):"
-docker compose -f docker-compose.prod.yml logs --tail=10 backend
+$COMPOSE_CMD logs --tail=10 backend
 echo ""
 
 echo -e "${BLUE}=== Nginx Access (last 5 requests) ===${NC}"
@@ -68,7 +74,7 @@ echo ""
 
 echo "=========================================="
 echo "Useful commands:"
-echo "  Follow logs: docker compose -f docker-compose.prod.yml logs -f"
-echo "  Restart app: docker compose -f docker-compose.prod.yml restart"
-echo "  Shell access: docker compose -f docker-compose.prod.yml exec backend sh"
+echo "  Follow logs: $COMPOSE_CMD logs -f"
+echo "  Restart app: $COMPOSE_CMD restart"
+echo "  Shell access: $COMPOSE_CMD exec backend sh"
 echo "=========================================="
