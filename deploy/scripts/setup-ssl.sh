@@ -100,7 +100,7 @@ fi
 COMPOSE_CMD="docker compose --env-file .env.production -f docker-compose.prod.yml"
 
 print_step "2/4 - Obtaining SSL certificate from Let's Encrypt..."
-$COMPOSE_CMD run --rm certbot certonly \
+$COMPOSE_CMD run --rm --entrypoint certbot certbot certonly \
     --webroot \
     --webroot-path=/var/www/certbot \
     --email "$EMAIL_FOR_SSL" \
@@ -150,7 +150,7 @@ echo ""
 print_info "Your application is now accessible at: https://$DOMAIN_NAME"
 echo ""
 print_info "SSL Certificate Details:"
-$COMPOSE_CMD run --rm certbot certificates
+$COMPOSE_CMD run --rm --entrypoint certbot certbot certificates
 echo ""
 print_info "Certificate auto-renewal is enabled"
 print_info "Certificates will be automatically renewed every 12 hours"
