@@ -64,8 +64,9 @@ echo ""
 
 print_warning "Before continuing, please ensure:"
 echo "  1. Your DNS A record points to this server's IP"
-echo "  2. Port 80 and 443 are open in your firewall/security group"
-echo "  3. Nginx is running with HTTP configuration"
+echo "  2. Port 80 and 443 are open in AWS Security Group (Inbound: HTTPS 443 from 0.0.0.0/0)"
+echo "  3. Port 443 is allowed in OS firewall (UFW) on this server"
+echo "  4. Nginx is running with HTTP configuration"
 echo ""
 read -p "Have you completed the above steps? (yes/no): " confirm
 
@@ -129,11 +130,20 @@ echo ""
 print_info "Testing HTTPS endpoint..."
 sleep 3
 
-if curl -f https://"$DOMAIN_NAME"/health > /dev/null 2>&1; then
+if curl -f --connect-timeout 10 https://"$DOMAIN_NAME"/health > /dev/null 2>&1; then
     print_info "✓ HTTPS is working correctly!"
 else
-    print_warning "HTTPS test failed. Please check nginx logs:"
-    print_info "  $COMPOSE_CMD logs nginx"
+    print_warning "HTTPS test failed or timed out."
+    echo ""
+    print_step "Troubleshooting (if curl hangs = port 443 likely blocked):"
+    echo "  1. AWS Security Group: EC2 → Security Groups → your instance's SG → Inbound rules"
+    echo "     Add: Type=HTTPS, Port=443, Source=0.0.0.0/0 (or your IP)"
+    echo "  2. On this server, check UFW: sudo ufw status | grep 443"
+    echo "     If 443 is denied, run: sudo ufw allow 443/tcp && sudo ufw reload"
+    echo "  3. Check nginx is listening: $COMPOSE_CMD exec nginx ss -tlnp | grep 443"
+    echo "  4. Check nginx logs: $COMPOSE_CMD logs nginx"
+    echo ""
+    print_info "Run ./scripts/troubleshoot-https.sh on the server for full diagnostics."
 fi
 
 echo ""
