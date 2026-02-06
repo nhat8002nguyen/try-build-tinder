@@ -164,6 +164,10 @@ jobs:
             echo "Waiting for services to start..."
             sleep 15
             
+            # Restore SSL config (deploy overwrites default.conf with HTTP-only; switch back so 443 works)
+            ./scripts/switch-nginx-to-ssl.sh || true
+            sleep 2
+            
             # Health check
             if curl -f http://localhost/health > /dev/null 2>&1; then
               echo "✓ Deployment successful!"
@@ -191,13 +195,13 @@ jobs:
           # Wait a bit more for services to stabilize
           sleep 10
           
-          # Test health endpoint
           if [ -n "$DOMAIN" ]; then
-            echo "Testing HTTPS endpoint: https://${DOMAIN}/health"
-            curl -f https://${DOMAIN}/health || exit 1
+            echo "Testing HTTPS /health via SSH (curl --resolve to avoid hairpin and GitHub→EC2 dependency)"
+            # Run HTTPS check on EC2: hit 127.0.0.1:443 with Host/SNI = DOMAIN so SSL and /health are verified
+            ssh ${SSH_USER}@${SSH_HOST} "curl -sf --connect-timeout 10 --resolve ${DOMAIN}:443:127.0.0.1 https://${DOMAIN}/health" || exit 1
           else
-            echo "Testing HTTP endpoint"
-            ssh ${SSH_USER}@${SSH_HOST} "curl -f http://localhost/health" || exit 1
+            echo "DOMAIN not set, testing health via SSH (http://localhost/health)"
+            ssh ${SSH_USER}@${SSH_HOST} "curl -sf http://localhost/health" || exit 1
           fi
           
           echo "✓ Deployment verification passed!"
