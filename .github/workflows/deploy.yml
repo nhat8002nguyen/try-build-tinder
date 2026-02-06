@@ -103,8 +103,8 @@ jobs:
           # Upload Docker image
           scp backend-image.tar.gz ${SSH_USER}@${SSH_HOST}:${DEPLOY_TMP}/
           
-          # Upload deployment files
-          scp -r deploy/* ${SSH_USER}@${SSH_HOST}:${DEPLOY_TMP}/
+          # Upload deployment files (upload deploy dir so ${DEPLOY_TMP}/deploy exists on server)
+          scp -r deploy ${SSH_USER}@${SSH_HOST}:${DEPLOY_TMP}/
           scp -r backend ${SSH_USER}@${SSH_HOST}:${DEPLOY_TMP}/
 
       - name: Deploy on EC2
