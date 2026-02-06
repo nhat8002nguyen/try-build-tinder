@@ -7,7 +7,7 @@ This guide explains how to set up automated deployments using GitHub Actions.
 The CI/CD pipeline automatically:
 1. Runs tests on every push
 2. Builds Docker image
-3. Deploys to EC2 when pushing to `main` branch
+3. Deploys to EC2 when pushing to `master` branch
 4. Verifies deployment health
 
 ## Prerequisites
@@ -93,7 +93,7 @@ Your GitHub repository should have these secrets:
 The deployment workflow runs when:
 
 ### Automatic Triggers
-- Push to `main` branch
+- Push to `master` branch
 - Changes in `backend/`, `deploy/`, or workflow file
 
 ### Manual Trigger
@@ -160,7 +160,7 @@ If you need to rollback:
 ### Method 1: Revert Git Commit
 ```bash
 git revert HEAD
-git push origin main
+git push origin master
 # This triggers a new deployment with previous code
 ```
 
@@ -176,9 +176,9 @@ cd /opt/tinder-app/deploy/scripts
 # Find the commit hash you want to deploy
 git log
 
-# Push that commit to main
+# Push that commit to master
 git checkout <commit-hash>
-git push origin HEAD:main --force
+git push origin HEAD:master --force
 # ⚠️ Use force push carefully!
 ```
 
@@ -247,7 +247,7 @@ For production vs staging:
 ### 4. Enable Branch Protection
 
 1. Go to **Settings** → **Branches**
-2. Add rule for `main` branch:
+2. Add rule for `master` branch:
    - Require pull request reviews
    - Require status checks to pass
    - Include administrators
