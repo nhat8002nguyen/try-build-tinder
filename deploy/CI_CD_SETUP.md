@@ -75,8 +75,9 @@ ubuntu
 
 #### DOMAIN_NAME (Optional)
 ```
-your-domain.com
-(only if you have SSL configured)
+Full hostname (record name) for your API, e.g. api.vnhatng.com
+Not the base domain (e.g. vnhatng.com). Used for SSL cert and health checks.
+Only needed if you have SSL configured.
 ```
 
 ### 4. Verify Secrets

@@ -34,6 +34,9 @@ certs/
 *.pem
 *.key
 *.crt
+*.pub
 
 # Keep example files
 !.env.production.example
+
+github-actions-key
