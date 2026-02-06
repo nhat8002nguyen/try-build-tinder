@@ -128,7 +128,7 @@ jobs:
               
               # Backup current deployment
               [ -f "${APP_DIR}/deploy/docker-compose.prod.yml" ] && \
-                docker compose -f ${APP_DIR}/deploy/docker-compose.prod.yml down || true
+                docker compose -f ${APP_DIR}/deploy/docker-compose.prod.yml --env-file ${APP_DIR}/deploy/.env.production down || true
               
               # Backup volumes
               docker run --rm -v tinder_postgres_data:/data -v ${BACKUP_DIR}:/backup alpine \
@@ -156,9 +156,9 @@ jobs:
             # Make scripts executable
             chmod +x ${APP_DIR}/deploy/scripts/*.sh
             
-            # Deploy
+            # Deploy (--env-file so ${VAR} in compose file are substituted from .env.production)
             cd ${APP_DIR}/deploy
-            docker compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml --env-file .env.production up -d
             
             # Wait for services to be healthy
             echo "Waiting for services to start..."
@@ -169,7 +169,7 @@ jobs:
               echo "✓ Deployment successful!"
             else
               echo "✗ Health check failed!"
-              docker compose -f docker-compose.prod.yml logs
+              docker compose -f docker-compose.prod.yml --env-file .env.production logs
               exit 1
             fi
             
