@@ -34,8 +34,8 @@ func New(cfg *config.Config) (*Database, error) {
 		return nil, err
 	}
 
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetMaxIdleConns(5)
+	sqlDB.SetMaxOpenConns(20)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	opt, err := redis.ParseURL(cfg.RedisURL)
