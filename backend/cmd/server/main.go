@@ -75,8 +75,13 @@ func main() {
 			}
 		}
 	}
+	originSet := make(map[string]bool)
+	for _, o := range corsOrigins {
+		originSet[strings.TrimSuffix(o, "/")] = true
+	}
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     corsOrigins,
+		AllowOriginFunc: func(origin string) bool { return originSet[strings.TrimSuffix(origin, "/")] },
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
