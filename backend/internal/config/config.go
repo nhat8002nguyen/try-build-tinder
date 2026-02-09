@@ -29,7 +29,8 @@ type Config struct {
 	AWSAccessKey    string
 	AWSSecretKey    string
 
-	Environment string
+	CORSAllowedOrigins string
+	Environment        string
 }
 
 func Load() *Config {
@@ -59,7 +60,8 @@ func Load() *Config {
 		AWSAccessKey:    getEnv("AWS_ACCESS_KEY", ""),
 		AWSSecretKey:    getEnv("AWS_SECRET_KEY", ""),
 
-		Environment: getEnv("ENVIRONMENT", "development"),
+		CORSAllowedOrigins: getEnv("CORS_ALLOWED_ORIGINS", ""),
+		Environment:        getEnv("ENVIRONMENT", "development"),
 	}
 }
 

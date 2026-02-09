@@ -12,6 +12,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"strings"
+
 	"github.com/tinder-clone/backend/internal/config"
 	"github.com/tinder-clone/backend/internal/database"
 	"github.com/tinder-clone/backend/internal/handlers"
@@ -64,8 +66,17 @@ func main() {
 
 	router := gin.Default()
 
+	corsOrigins := []string{"http://localhost:3000", "http://localhost:5173", "https://spark.vnhatng.com", "http://spark.vnhatng.com"}
+	if cfg.CORSAllowedOrigins != "" {
+		parts := strings.Split(cfg.CORSAllowedOrigins, ",")
+		for _, o := range parts {
+			if o = strings.TrimSpace(o); o != "" {
+				corsOrigins = append(corsOrigins, o)
+			}
+		}
+	}
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5173"},
+		AllowOrigins:     corsOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
