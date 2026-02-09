@@ -26,6 +26,11 @@ if [ -z "$DOMAIN_NAME" ]; then
     exit 1
 fi
 
+if [ -z "$FRONTEND_DOMAIN" ]; then
+    echo -e "${RED}[ERROR]${NC} FRONTEND_DOMAIN not set in .env.production (e.g. spark.vnhatng.com)"
+    exit 1
+fi
+
 COMPOSE_CMD="docker compose --env-file .env.production -f docker-compose.prod.yml"
 
 if [ ! -d "./nginx/conf.d" ]; then
@@ -45,9 +50,18 @@ if ! $COMPOSE_CMD exec -T nginx test -f "$CERT_PATH" 2>/dev/null; then
     exit 1
 fi
 
-echo "Switching nginx to SSL config for $DOMAIN_NAME..."
+FRONTEND_CERT_PATH="/etc/letsencrypt/live/$FRONTEND_DOMAIN/fullchain.pem"
+if ! $COMPOSE_CMD exec -T nginx test -f "$FRONTEND_CERT_PATH" 2>/dev/null; then
+    echo -e "${RED}[ERROR]${NC} SSL cert not found at $FRONTEND_CERT_PATH"
+    echo ""
+    echo "Obtain a cert for $FRONTEND_DOMAIN (e.g. certbot certonly --webroot -w /var/www/certbot -d $FRONTEND_DOMAIN)"
+    exit 1
+fi
+
+echo "Switching nginx to SSL config for $DOMAIN_NAME (API) and $FRONTEND_DOMAIN (frontend)..."
 cp ./nginx/conf.d/default-ssl.conf ./nginx/conf.d/default.conf
 sed -i.bak "s/your-domain.com/$DOMAIN_NAME/g" ./nginx/conf.d/default.conf
+sed -i.bak "s/your-frontend-domain.com/$FRONTEND_DOMAIN/g" ./nginx/conf.d/default.conf
 
 $COMPOSE_CMD restart nginx
 sleep 2

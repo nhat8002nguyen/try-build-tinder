@@ -1,3 +1,5 @@
+import { getApiOrigin } from './api'
+
 type MessageHandler = (message: WebSocketMessage) => void
 
 export interface WebSocketMessage {
@@ -19,8 +21,10 @@ class WebSocketService {
     }
 
     this.isConnecting = true
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${window.location.host}/ws?token=${token}`
+    const origin = getApiOrigin()
+    const wsUrl = origin
+      ? origin.replace(/^http/, 'ws') + '/ws?token=' + token
+      : (window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host + '/ws?token=' + token
 
     try {
       this.ws = new WebSocket(wsUrl)

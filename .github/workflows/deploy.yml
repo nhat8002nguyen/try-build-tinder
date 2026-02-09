@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - 'backend/**'
+      - 'frontend/**'
       - 'deploy/**'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
@@ -81,6 +82,21 @@ jobs:
         with:
           name: docker-image
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: ./frontend
+        env:
+          VITE_API_ORIGIN: https://api.vnhatng.com
+        run: |
+          npm ci
+          npm run build
+
       - name: Configure SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
@@ -106,6 +122,7 @@ jobs:
           # Upload deployment files (upload deploy dir so ${DEPLOY_TMP}/deploy exists on server)
           scp -r deploy ${SSH_USER}@${SSH_HOST}:${DEPLOY_TMP}/
           scp -r backend ${SSH_USER}@${SSH_HOST}:${DEPLOY_TMP}/
+          scp -r frontend/dist ${SSH_USER}@${SSH_HOST}:${DEPLOY_TMP}/frontend-dist
 
       - name: Deploy on EC2
         env:
@@ -144,6 +161,8 @@ jobs:
             mkdir -p ${APP_DIR}
             cp -r ${DEPLOY_TMP}/deploy ${APP_DIR}/
             cp -r ${DEPLOY_TMP}/backend ${APP_DIR}/
+            mkdir -p ${APP_DIR}/frontend/dist
+            cp -r ${DEPLOY_TMP}/frontend-dist/* ${APP_DIR}/frontend/dist/
             
             # Preserve .env.production if it exists
             if [ -f "${APP_DIR}/deploy/.env.production" ]; then

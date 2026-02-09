@@ -1,8 +1,14 @@
 import axios from 'axios'
 import type { User, Match, Message, Notification, TokenPair, APIResponse } from '../types'
 
+export function getApiOrigin(): string {
+  const env = import.meta.env.VITE_API_ORIGIN
+  if (!env || typeof env !== 'string') return ''
+  return String(env).replace(/\/$/, '')
+}
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: getApiOrigin() ? getApiOrigin() + '/api' : '/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -27,7 +33,7 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refresh_token')
       if (refreshToken) {
         try {
-          const response = await axios.post('/api/auth/refresh', {
+          const response = await api.post('/auth/refresh', {
             refresh_token: refreshToken,
           })
 

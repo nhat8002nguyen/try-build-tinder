@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Flame, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '../store/authStore'
+import { getApiOrigin } from '../services/api'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -29,7 +30,8 @@ export default function Login() {
   }
 
   const handleOAuth = (provider: string) => {
-    window.location.href = `/api/auth/oauth/${provider}`
+    const base = getApiOrigin()
+    window.location.href = base ? base + '/api/auth/oauth/' + provider : '/api/auth/oauth/' + provider
   }
 
   return (
