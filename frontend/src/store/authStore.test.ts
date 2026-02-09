@@ -25,7 +25,7 @@ describe('Auth Store', () => {
       email: 'test@example.com',
       name: 'Test User',
       gender: 'male' as const,
-      birthdate: new Date('1990-01-01'),
+      birthdate: '1990-01-01',
       bio: '',
       photos: [],
       location: { latitude: 0, longitude: 0 },
@@ -37,9 +37,9 @@ describe('Auth Store', () => {
       },
       is_verified: false,
       is_active: true,
-      last_active_at: new Date(),
-      created_at: new Date(),
-      updated_at: new Date(),
+      last_active_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     }
 
     useAuthStore.getState().setUser(testUser)
