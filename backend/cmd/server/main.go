@@ -61,7 +61,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authService, userService)
 	userHandler := handlers.NewUserHandler(userService, storageService)
 	swipeHandler := handlers.NewSwipeHandler(swipeService, matchService, notificationService, wsHub)
-	matchHandler := handlers.NewMatchHandler(matchService)
+	matchHandler := handlers.NewMatchHandler(matchService, userService)
 	messageHandler := handlers.NewMessageHandler(messageService, matchService, wsHub)
 	discoveryHandler := handlers.NewDiscoveryHandler(discoveryService)
 	notificationHandler := handlers.NewNotificationHandler(notificationService)

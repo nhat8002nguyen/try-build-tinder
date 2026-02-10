@@ -12,10 +12,14 @@ import (
 
 type MatchHandler struct {
 	matchService *services.MatchService
+	userService  *services.UserService
 }
 
-func NewMatchHandler(matchService *services.MatchService) *MatchHandler {
-	return &MatchHandler{matchService: matchService}
+func NewMatchHandler(matchService *services.MatchService, userService *services.UserService) *MatchHandler {
+	return &MatchHandler{
+		matchService: matchService,
+		userService:  userService,
+	}
 }
 
 type MatchResponse struct {
@@ -36,7 +40,12 @@ func (h *MatchHandler) GetMatches(c *gin.Context) {
 
 	response := make([]MatchResponse, 0, len(matches))
 	for _, match := range matches {
-		otherUser := match.GetOtherUser(userID)
+		otherUserID := match.GetOtherUserID(userID)
+		otherUser, err := h.userService.GetByID(otherUserID)
+		if err != nil {
+			utils.InternalError(c, "Failed to fetch match user")
+			return
+		}
 
 		var lastMessageAt *string
 		if match.LastMessageAt != nil {

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { MessageCircle, Heart } from 'lucide-react'
 import { matchAPI } from '../services/api'
 import type { Match } from '../types'
+import { useAuthStore } from '../store/authStore'
 
 function MatchCard({ match, index }: { match: Match; index: number }) {
   const otherUser = match.other_user
@@ -69,10 +70,13 @@ function MatchCard({ match, index }: { match: Match; index: number }) {
 }
 
 export default function Matches() {
+  const { user } = useAuthStore()
   const { data: matches, isLoading } = useQuery({
     queryKey: ['matches'],
     queryFn: matchAPI.getMatches,
   })
+
+  const safeMatches = (matches ?? []).filter((match) => match.other_user.id !== user?.id)
 
   if (isLoading) {
     return (
@@ -91,11 +95,11 @@ export default function Matches() {
 
       <div className="p-4">
         {/* New Matches section */}
-        {matches && matches.filter(m => !m.last_message_at).length > 0 && (
+        {safeMatches.filter(m => !m.last_message_at).length > 0 && (
           <div className="mb-6">
             <h2 className="text-white/60 text-sm font-medium mb-3">New Matches</h2>
             <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4">
-              {matches
+              {safeMatches
                 .filter(m => !m.last_message_at)
                 .map((match) => (
                   <Link
@@ -131,15 +135,15 @@ export default function Matches() {
         <div>
           <h2 className="text-white/60 text-sm font-medium mb-3">Messages</h2>
           
-          {matches && matches.filter(m => m.last_message_at).length > 0 ? (
+          {safeMatches.filter(m => m.last_message_at).length > 0 ? (
             <div className="space-y-2">
-              {matches
+              {safeMatches
                 .filter(m => m.last_message_at)
                 .map((match, index) => (
                   <MatchCard key={match.id} match={match} index={index} />
                 ))}
             </div>
-          ) : matches && matches.length > 0 ? (
+          ) : safeMatches.length > 0 ? (
             <div className="text-center py-12">
               <MessageCircle className="w-12 h-12 text-white/20 mx-auto mb-4" />
               <p className="text-white/40">No messages yet</p>
