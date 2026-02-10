@@ -53,8 +53,8 @@ jobs:
       - name: Build Docker image
         working-directory: ./backend
         run: |
-          docker build -t tinder-backend:${{ github.sha }} .
-          docker build -t tinder-backend:latest .
+          docker build --build-arg GIT_SHA=${{ github.sha }} -t tinder-backend:${{ github.sha }} .
+          docker build --build-arg GIT_SHA=${{ github.sha }} -t tinder-backend:latest .
 
       - name: Save Docker image
         run: |
@@ -175,9 +175,9 @@ jobs:
             # Make scripts executable
             chmod +x ${APP_DIR}/deploy/scripts/*.sh
             
-            # Deploy (--env-file so ${VAR} in compose file are substituted from .env.production)
+            # Deploy using the loaded image (--no-build so CI-built backend is used, not a rebuild from source)
             cd ${APP_DIR}/deploy
-            docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+            docker compose -f docker-compose.prod.yml --env-file .env.production up -d --no-build
             
             # Wait for services to be healthy
             echo "Waiting for services to start..."

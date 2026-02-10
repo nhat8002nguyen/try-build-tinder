@@ -107,6 +107,19 @@ curl http://localhost/health
 curl https://your-domain.com/health
 ```
 
+### Verify deployed version (CI/CD)
+After a GitHub Actions deploy, confirm the backend is running the expected commit:
+
+```bash
+# From your machine (replace with your API host)
+curl -s https://api.vnhatng.com/health
+# Example: {"status":"healthy","version":"1561e52..."}
+
+# On EC2 via SSH
+ssh ${SSH_USER}@${EC2_HOST} "curl -s http://localhost/health"
+```
+The `version` field is the git commit SHA baked into the image at build time. Compare it to the latest commit on `master` (e.g. `git log -1 --format=%h`).
+
 ### Backup & Restore
 ```bash
 # Create backup

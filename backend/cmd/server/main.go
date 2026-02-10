@@ -22,6 +22,9 @@ import (
 	"github.com/tinder-clone/backend/internal/websocket"
 )
 
+// Version is set at build time via -ldflags "-X main.Version=<git SHA>"
+var Version string
+
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
@@ -90,7 +93,11 @@ func main() {
 	}))
 
 	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+		payload := gin.H{"status": "healthy"}
+		if Version != "" {
+			payload["version"] = Version
+		}
+		c.JSON(http.StatusOK, payload)
 	})
 
 	api := router.Group("/api")
