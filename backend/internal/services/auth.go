@@ -214,10 +214,19 @@ func (s *AuthService) HandleOAuthCallback(ctx context.Context, provider, code st
 			}
 			s.db.DB.Create(&oauthAccount)
 		} else {
+			birthdate := time.Now().AddDate(-20, 0, 0)
 			user = &models.User{
 				Email:      userInfo.Email,
 				Name:       userInfo.Name,
+				Gender:     models.GenderMale,
+				Birthdate:  &birthdate,
 				IsVerified: true,
+				Preferences: models.UserPreferences{
+					MinAge:           18,
+					MaxAge:           50,
+					MaxDistance:      100,
+					GenderPreference: []models.Gender{models.GenderMale, models.GenderFemale},
+				},
 			}
 			if err := s.db.DB.Create(user).Error; err != nil {
 				return nil, nil, fmt.Errorf("failed to create user: %w", err)
@@ -253,10 +262,13 @@ func (s *AuthService) Register(email, password, name string) (*models.User, *Tok
 		return nil, nil, err
 	}
 
+	birthdate := time.Now().AddDate(-20, 0, 0)
 	user := &models.User{
 		Email:        email,
 		PasswordHash: hashedPassword,
 		Name:         name,
+		Gender:       models.GenderMale,
+		Birthdate:    &birthdate,
 		Preferences: models.UserPreferences{
 			MinAge:           18,
 			MaxAge:           50,
