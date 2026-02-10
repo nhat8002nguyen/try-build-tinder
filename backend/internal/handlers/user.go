@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/tinder-clone/backend/internal/apperrors"
+	"github.com/tinder-clone/backend/internal/constants"
 	"github.com/tinder-clone/backend/internal/middleware"
 	"github.com/tinder-clone/backend/internal/models"
 	"github.com/tinder-clone/backend/internal/services"
@@ -78,7 +81,7 @@ func (h *UserHandler) UploadPhoto(c *gin.Context) {
 		return
 	}
 
-	if photoCount >= 6 {
+	if photoCount >= int64(constants.MaxPhotosPerUser) {
 		utils.BadRequest(c, "Maximum of 6 photos allowed")
 		return
 	}
@@ -91,6 +94,10 @@ func (h *UserHandler) UploadPhoto(c *gin.Context) {
 
 	photo, err := h.userService.AddPhoto(userID, photoURL, int(photoCount))
 	if err != nil {
+		if errors.Is(err, apperrors.ErrMaxPhotosReached) {
+			utils.BadRequest(c, "Maximum of 6 photos allowed")
+			return
+		}
 		utils.InternalError(c, "Failed to save photo")
 		return
 	}

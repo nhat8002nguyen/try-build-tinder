@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tinder-clone/backend/internal/apperrors"
+	"github.com/tinder-clone/backend/internal/constants"
 	"github.com/tinder-clone/backend/internal/database"
 	"github.com/tinder-clone/backend/internal/models"
 )
@@ -95,6 +97,14 @@ func (s *UserService) UpdateLastActive(userID uuid.UUID) error {
 }
 
 func (s *UserService) AddPhoto(userID uuid.UUID, photoURL string, order int) (*models.UserPhoto, error) {
+	count, err := s.GetPhotoCount(userID)
+	if err != nil {
+		return nil, err
+	}
+	if count >= int64(constants.MaxPhotosPerUser) {
+		return nil, apperrors.ErrMaxPhotosReached
+	}
+
 	photo := &models.UserPhoto{
 		UserID:       userID,
 		PhotoURL:     photoURL,
