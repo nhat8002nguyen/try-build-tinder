@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User } from '../types'
 import { authAPI } from '../services/api'
+import { queryClient } from '../queryClient'
 
 interface AuthState {
   user: User | null
@@ -43,6 +44,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        queryClient.clear()
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
         set({ user: null, isAuthenticated: false, isLoading: false })
