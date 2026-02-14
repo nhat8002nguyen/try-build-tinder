@@ -15,7 +15,7 @@ class WebSocketService {
   private messageHandlers: Set<MessageHandler> = new Set()
   private isConnecting = false
 
-  connect(token: string): void {
+  connect(): void {
     if (this.ws?.readyState === WebSocket.OPEN || this.isConnecting) {
       return
     }
@@ -23,8 +23,8 @@ class WebSocketService {
     this.isConnecting = true
     const origin = getApiOrigin()
     const wsUrl = origin
-      ? origin.replace(/^http/, 'ws') + '/ws?token=' + token
-      : (window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host + '/ws?token=' + token
+      ? origin.replace(/^http/, 'ws') + '/ws'
+      : (window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host + '/ws'
 
     try {
       this.ws = new WebSocket(wsUrl)
@@ -47,7 +47,7 @@ class WebSocketService {
       this.ws.onclose = () => {
         console.log('WebSocket disconnected')
         this.isConnecting = false
-        this.attemptReconnect(token)
+        this.attemptReconnect()
       }
 
       this.ws.onerror = (error) => {
@@ -60,7 +60,7 @@ class WebSocketService {
     }
   }
 
-  private attemptReconnect(token: string): void {
+  private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.log('Max reconnect attempts reached')
       return
@@ -72,7 +72,7 @@ class WebSocketService {
     console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`)
 
     setTimeout(() => {
-      this.connect(token)
+      this.connect()
     }, delay)
   }
 

@@ -58,7 +58,7 @@ func main() {
 	wsHub := websocket.NewHub()
 	go wsHub.Run()
 
-	authHandler := handlers.NewAuthHandler(authService, userService)
+	authHandler := handlers.NewAuthHandler(authService, userService, cfg)
 	userHandler := handlers.NewUserHandler(userService, storageService)
 	swipeHandler := handlers.NewSwipeHandler(swipeService, matchService, notificationService, wsHub)
 	matchHandler := handlers.NewMatchHandler(matchService, userService)
@@ -107,6 +107,7 @@ func main() {
 			auth.POST("/register", authHandler.Register)
 			auth.POST("/login", authHandler.Login)
 			auth.POST("/refresh", authHandler.RefreshToken)
+			auth.POST("/logout", authHandler.Logout)
 			auth.GET("/oauth/:provider", authHandler.OAuthRedirect)
 			auth.GET("/oauth/:provider/callback", authHandler.OAuthCallback)
 			auth.GET("/me", middleware.AuthRequired(authService), authHandler.GetCurrentUser)

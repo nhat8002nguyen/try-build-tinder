@@ -1,25 +1,16 @@
 import { useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const { setTokens, fetchUser } = useAuthStore()
+  const { fetchUser } = useAuthStore()
 
   useEffect(() => {
-    const accessToken = searchParams.get('access_token')
-    const refreshToken = searchParams.get('refresh_token')
-
-    if (accessToken && refreshToken) {
-      setTokens(accessToken, refreshToken)
-      fetchUser().then(() => {
-        navigate('/discover')
-      })
-    } else {
-      navigate('/login')
-    }
-  }, [searchParams, setTokens, fetchUser, navigate])
+    fetchUser().then((ok) => {
+      navigate(ok ? '/discover' : '/login')
+    })
+  }, [fetchUser, navigate])
 
   return (
     <div className="min-h-screen flex items-center justify-center">

@@ -9,11 +9,10 @@ interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
   setUser: (user: User | null) => void
-  setTokens: (accessToken: string, refreshToken: string) => void
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, name: string) => Promise<void>
-  logout: () => void
-  fetchUser: () => Promise<void>
+  logout: () => Promise<void>
+  fetchUser: () => Promise<boolean>
   updateUser: (user: Partial<User>) => void
 }
 
@@ -26,44 +25,35 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user) => set({ user, isAuthenticated: !!user, isLoading: false }),
 
-      setTokens: (accessToken, refreshToken) => {
-        localStorage.setItem('access_token', accessToken)
-        localStorage.setItem('refresh_token', refreshToken)
-      },
-
       login: async (email, password) => {
-        const { user, tokens } = await authAPI.login(email, password)
-        get().setTokens(tokens.access_token, tokens.refresh_token)
+        const { user } = await authAPI.login(email, password)
         set({ user, isAuthenticated: true, isLoading: false })
       },
 
       register: async (email, password, name) => {
-        const { user, tokens } = await authAPI.register(email, password, name)
-        get().setTokens(tokens.access_token, tokens.refresh_token)
+        const { user } = await authAPI.register(email, password, name)
         set({ user, isAuthenticated: true, isLoading: false })
       },
 
-      logout: () => {
-        queryClient.clear()
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        set({ user: null, isAuthenticated: false, isLoading: false })
+      logout: async () => {
+        try {
+          await authAPI.logout()
+        } finally {
+          queryClient.clear()
+          set({ user: null, isAuthenticated: false, isLoading: false })
+        }
       },
 
       fetchUser: async () => {
-        const token = localStorage.getItem('access_token')
-        if (!token) {
-          set({ isLoading: false })
-          return
-        }
-
         try {
           const user = await authAPI.getMe()
           set({ user, isAuthenticated: true, isLoading: false })
+          return true
         } catch {
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
           set({ user: null, isAuthenticated: false, isLoading: false })
+          return false
+        } finally {
+          set({ isLoading: false })
         }
       },
 

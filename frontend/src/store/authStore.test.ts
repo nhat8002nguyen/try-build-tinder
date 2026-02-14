@@ -1,15 +1,21 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useAuthStore } from './authStore'
+import { authAPI } from '../services/api'
+
+vi.mock('../services/api', () => ({
+  authAPI: {
+    logout: vi.fn().mockResolvedValue(undefined),
+  },
+}))
 
 describe('Auth Store', () => {
   beforeEach(() => {
-    // Clear store before each test
     useAuthStore.setState({
       user: null,
       isAuthenticated: false,
       isLoading: false,
     })
-    localStorage.clear()
+    vi.mocked(authAPI.logout).mockClear()
   })
 
   it('initializes with default values', () => {
@@ -50,21 +56,7 @@ describe('Auth Store', () => {
     expect(state.isLoading).toBe(false)
   })
 
-  it('sets tokens correctly', () => {
-    const accessToken = 'test-access-token'
-    const refreshToken = 'test-refresh-token'
-
-    useAuthStore.getState().setTokens(accessToken, refreshToken)
-
-    expect(localStorage.getItem('access_token')).toBe(accessToken)
-    expect(localStorage.getItem('refresh_token')).toBe(refreshToken)
-  })
-
-  it('logs out correctly', () => {
-    // Set some data first
-    localStorage.setItem('access_token', 'test-token')
-    localStorage.setItem('refresh_token', 'test-refresh')
-    
+  it('logs out correctly', async () => {
     useAuthStore.setState({
       user: {
         id: 'test-id',
@@ -74,12 +66,11 @@ describe('Auth Store', () => {
       isAuthenticated: true,
     })
 
-    useAuthStore.getState().logout()
+    await useAuthStore.getState().logout()
 
+    expect(authAPI.logout).toHaveBeenCalled()
     expect(useAuthStore.getState().user).toBeNull()
     expect(useAuthStore.getState().isAuthenticated).toBe(false)
-    expect(localStorage.getItem('access_token')).toBeNull()
-    expect(localStorage.getItem('refresh_token')).toBeNull()
   })
 
   it('updates user correctly', () => {

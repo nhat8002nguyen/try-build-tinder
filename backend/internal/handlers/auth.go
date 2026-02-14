@@ -5,6 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/tinder-clone/backend/internal/config"
+	"github.com/tinder-clone/backend/internal/cookies"
 	"github.com/tinder-clone/backend/internal/middleware"
 	"github.com/tinder-clone/backend/internal/services"
 	"github.com/tinder-clone/backend/internal/utils"
@@ -13,12 +15,14 @@ import (
 type AuthHandler struct {
 	authService *services.AuthService
 	userService *services.UserService
+	cfg         *config.Config
 }
 
-func NewAuthHandler(authService *services.AuthService, userService *services.UserService) *AuthHandler {
+func NewAuthHandler(authService *services.AuthService, userService *services.UserService, cfg *config.Config) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
 		userService: userService,
+		cfg:         cfg,
 	}
 }
 
@@ -51,9 +55,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	cookies.SetAuthCookies(c, tokens.AccessToken, tokens.RefreshToken, h.cfg)
 	utils.SuccessResponse(c, http.StatusCreated, gin.H{
-		"user":   user,
-		"tokens": tokens,
+		"user": user,
 	})
 }
 
@@ -75,30 +79,37 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	cookies.SetAuthCookies(c, tokens.AccessToken, tokens.RefreshToken, h.cfg)
 	utils.SuccessResponse(c, http.StatusOK, gin.H{
-		"user":   user,
-		"tokens": tokens,
+		"user": user,
 	})
 }
 
 type RefreshRequest struct {
-	RefreshToken string `json:"refresh_token" binding:"required"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
-	var req RefreshRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.BadRequest(c, err.Error())
+	refreshToken, _ := c.Cookie(cookies.RefreshTokenCookie)
+	if refreshToken == "" {
+		var req RefreshRequest
+		_ = c.ShouldBindJSON(&req)
+		refreshToken = req.RefreshToken
+	}
+	if refreshToken == "" {
+		utils.Unauthorized(c, "Refresh token required")
 		return
 	}
 
-	tokens, err := h.authService.RefreshAccessToken(req.RefreshToken)
+	tokens, err := h.authService.RefreshAccessToken(refreshToken)
 	if err != nil {
+		cookies.ClearAuthCookies(c)
 		utils.Unauthorized(c, err.Error())
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, tokens)
+	cookies.SetAuthCookies(c, tokens.AccessToken, tokens.RefreshToken, h.cfg)
+	utils.SuccessResponse(c, http.StatusOK, gin.H{})
 }
 
 func (h *AuthHandler) OAuthRedirect(c *gin.Context) {
@@ -128,10 +139,14 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 		return
 	}
 
-	frontendURL := "http://localhost:3000/auth/callback"
-	redirectURL := frontendURL + "?access_token=" + tokens.AccessToken + "&refresh_token=" + tokens.RefreshToken
-
+	cookies.SetAuthCookies(c, tokens.AccessToken, tokens.RefreshToken, h.cfg)
+	redirectURL := h.cfg.FrontendURL + "/auth/callback"
 	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+}
+
+func (h *AuthHandler) Logout(c *gin.Context) {
+	cookies.ClearAuthCookies(c)
+	utils.SuccessResponse(c, http.StatusOK, gin.H{})
 }
 
 func (h *AuthHandler) GetCurrentUser(c *gin.Context) {

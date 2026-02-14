@@ -31,6 +31,7 @@ type Config struct {
 
 	CORSAllowedOrigins string
 	Environment        string
+	FrontendURL        string
 }
 
 func Load() *Config {
@@ -62,6 +63,7 @@ func Load() *Config {
 
 		CORSAllowedOrigins: getEnv("CORS_ALLOWED_ORIGINS", ""),
 		Environment:        getEnv("ENVIRONMENT", "development"),
+		FrontendURL:        getEnv("FRONTEND_URL", "http://localhost:3000"),
 	}
 }
 

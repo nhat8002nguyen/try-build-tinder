@@ -27,27 +27,24 @@ export function WebSocketProvider({
       return
     }
 
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      wsService.connect(token)
+    wsService.connect()
 
-      const connectionHandler = (message: WebSocketMessage) => {
-        if (message.type === 'pong') {
-          setIsConnected(true)
-        }
+    const connectionHandler = (message: WebSocketMessage) => {
+      if (message.type === 'pong') {
+        setIsConnected(true)
       }
+    }
 
-      wsService.addMessageHandler(connectionHandler)
+    wsService.addMessageHandler(connectionHandler)
 
-      const interval = setInterval(() => {
-        setIsConnected(wsService.isConnected)
-      }, 1000)
+    const interval = setInterval(() => {
+      setIsConnected(wsService.isConnected)
+    }, 1000)
 
-      return () => {
-        wsService.removeMessageHandler(connectionHandler)
-        clearInterval(interval)
-        wsService.disconnect()
-      }
+    return () => {
+      wsService.removeMessageHandler(connectionHandler)
+      clearInterval(interval)
+      wsService.disconnect()
     }
   }, [enabled])
 

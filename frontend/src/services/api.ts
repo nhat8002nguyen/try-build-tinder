@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { User, Match, Message, Notification, TokenPair, APIResponse } from '../types'
+import type { User, Match, Message, Notification, APIResponse } from '../types'
 
 export function getApiOrigin(): string {
   const env = import.meta.env.VITE_API_ORIGIN
@@ -12,52 +12,59 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 })
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
+let refreshPromise: Promise<boolean> | null = null
+
+function redirectToLogin(): void {
+  window.location.href = '/login'
+}
 
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-
-      const refreshToken = localStorage.getItem('refresh_token')
-      if (refreshToken) {
-        try {
-          const response = await api.post('/auth/refresh', {
-            refresh_token: refreshToken,
-          })
-
-          const { access_token, refresh_token } = response.data.data
-          localStorage.setItem('access_token', access_token)
-          localStorage.setItem('refresh_token', refresh_token)
-
-          originalRequest.headers.Authorization = `Bearer ${access_token}`
-          return api(originalRequest)
-        } catch {
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
-          window.location.href = '/login'
-        }
-      }
+    if (error.response?.status !== 401 || originalRequest._retry) {
+      return Promise.reject(error)
     }
 
-    return Promise.reject(error)
+    const isRefreshRequest = originalRequest.url?.includes('/auth/refresh')
+    if (isRefreshRequest) {
+      redirectToLogin()
+      return Promise.reject(error)
+    }
+
+    originalRequest._retry = true
+
+    if (!refreshPromise) {
+      refreshPromise = api
+        .post('/auth/refresh')
+        .then(() => true)
+        .catch((err) => {
+          if (err.response?.status === 401) {
+            redirectToLogin()
+          }
+          return false
+        })
+        .finally(() => {
+          refreshPromise = null
+        })
+    }
+
+    const success = await refreshPromise
+    if (!success) {
+      return Promise.reject(error)
+    }
+
+    return api(originalRequest)
   }
 )
 
 export const authAPI = {
   register: async (email: string, password: string, name: string) => {
-    const response = await api.post<APIResponse<{ user: User; tokens: TokenPair }>>('/auth/register', {
+    const response = await api.post<APIResponse<{ user: User }>>('/auth/register', {
       email,
       password,
       name,
@@ -66,7 +73,7 @@ export const authAPI = {
   },
 
   login: async (email: string, password: string) => {
-    const response = await api.post<APIResponse<{ user: User; tokens: TokenPair }>>('/auth/login', {
+    const response = await api.post<APIResponse<{ user: User }>>('/auth/login', {
       email,
       password,
     })
@@ -78,11 +85,12 @@ export const authAPI = {
     return response.data.data!
   },
 
-  refresh: async (refreshToken: string) => {
-    const response = await api.post<APIResponse<TokenPair>>('/auth/refresh', {
-      refresh_token: refreshToken,
-    })
-    return response.data.data!
+  refresh: async () => {
+    await api.post('/auth/refresh')
+  },
+
+  logout: async () => {
+    await api.post('/auth/logout')
   },
 }
 

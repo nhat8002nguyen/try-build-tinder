@@ -13,6 +13,11 @@ export default defineConfig({
       '/ws': {
         target: 'ws://localhost:8080',
         ws: true,
+        configure: (proxy) => {
+          proxy.on('error', () => {
+            // Swallow EPIPE and other ws proxy errors so dev server stays up
+          })
+        },
       },
     },
   },
