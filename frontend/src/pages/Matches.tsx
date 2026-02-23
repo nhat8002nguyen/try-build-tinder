@@ -2,14 +2,14 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { MessageCircle, Heart } from 'lucide-react'
-import { matchAPI } from '../services/api'
+import { matchAPI, getPhotoUrl } from '../services/api'
 import type { Match } from '../types'
 import { useAuthStore } from '../store/authStore'
 
 function MatchCard({ match, index }: { match: Match; index: number }) {
   const otherUser = match.other_user
-  const photo = otherUser.photos?.[0]?.photo_url || 
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherUser.id}`
+  const rawPhoto = otherUser.photos?.[0]?.photo_url
+  const photo = rawPhoto ? getPhotoUrl(rawPhoto) : `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherUser.id}`
 
   const formatTime = (dateString: string | null) => {
     if (!dateString) return ''
@@ -113,8 +113,9 @@ export default function Matches() {
                       className="relative"
                     >
                       <img
-                        src={match.other_user.photos?.[0]?.photo_url || 
-                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${match.other_user.id}`}
+                        src={match.other_user.photos?.[0]?.photo_url
+                          ? getPhotoUrl(match.other_user.photos[0].photo_url)
+                          : `https://api.dicebear.com/7.x/avataaars/svg?seed=${match.other_user.id}`}
                         alt={match.other_user.name}
                         className="w-20 h-20 rounded-full object-cover ring-2 ring-primary-500"
                       />

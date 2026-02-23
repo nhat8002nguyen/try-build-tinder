@@ -291,7 +291,7 @@ func (s *AuthService) Register(email, password, name string) (*models.User, *Tok
 
 func (s *AuthService) Login(email, password string) (*models.User, *TokenPair, error) {
 	var user models.User
-	if err := s.db.DB.Where("email = ?", email).First(&user).Error; err != nil {
+	if err := s.db.DB.Preload("Photos").Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, nil, errors.New("invalid credentials")
 	}
 

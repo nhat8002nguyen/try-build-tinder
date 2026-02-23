@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Send, MoreVertical } from 'lucide-react'
-import { matchAPI, messageAPI } from '../services/api'
+import { matchAPI, messageAPI, getPhotoUrl } from '../services/api'
 import { useAuthStore } from '../store/authStore'
 import { useWebSocket } from '../contexts/WebSocketContext'
 import type { Message } from '../types'
@@ -92,8 +92,8 @@ export default function Chat() {
   }
 
   const otherUser = match.other_user
-  const photo = otherUser.photos?.[0]?.photo_url || 
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherUser.id}`
+  const rawPhoto = otherUser.photos?.[0]?.photo_url
+  const photo = rawPhoto ? getPhotoUrl(rawPhoto) : `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherUser.id}`
 
   return (
     <div className="min-h-screen flex flex-col">

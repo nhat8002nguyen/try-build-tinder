@@ -2,14 +2,15 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Settings, Edit, LogOut, ChevronRight, Heart, Shield, Bell, HelpCircle } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { getPhotoUrl } from '../services/api'
 
 export default function Profile() {
   const { user, logout } = useAuthStore()
 
   if (!user) return null
 
-  const photo = user.photos?.[0]?.photo_url || 
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`
+  const rawPhoto = user.photos?.[0]?.photo_url
+  const photo = rawPhoto ? getPhotoUrl(rawPhoto) : `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`
 
   const calculateAge = (birthdate: string | null) => {
     if (!birthdate) return null

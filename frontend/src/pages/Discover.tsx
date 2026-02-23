@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
 import { Heart, X, MapPin, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { discoveryAPI, swipeAPI, userAPI } from '../services/api'
+import { discoveryAPI, swipeAPI, userAPI, getPhotoUrl } from '../services/api'
 import type { User } from '../types'
 
 function SwipeCard({ 
@@ -66,7 +66,7 @@ function SwipeCard({
         {/* Photo */}
         <div className="absolute inset-0">
           <img
-            src={photos[currentPhotoIndex].photo_url}
+            src={getPhotoUrl(photos[currentPhotoIndex].photo_url)}
             alt={user.name}
             className="w-full h-full object-cover"
           />

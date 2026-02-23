@@ -100,6 +100,8 @@ func main() {
 		c.JSON(http.StatusOK, payload)
 	})
 
+	router.Static("/uploads", cfg.LocalStorageDir)
+
 	api := router.Group("/api")
 	{
 		auth := api.Group("/auth")

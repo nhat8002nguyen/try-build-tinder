@@ -7,6 +7,13 @@ export function getApiOrigin(): string {
   return String(env).replace(/\/$/, '')
 }
 
+export function getPhotoUrl(photoUrl: string): string {
+  if (!photoUrl) return photoUrl
+  if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) return photoUrl
+  const origin = getApiOrigin()
+  return origin ? origin + photoUrl : photoUrl
+}
+
 const api = axios.create({
   baseURL: getApiOrigin() ? getApiOrigin() + '/api' : '/api',
   headers: {

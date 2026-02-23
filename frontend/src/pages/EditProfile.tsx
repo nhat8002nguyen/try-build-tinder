@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Plus, X, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { userAPI } from '../services/api'
+import { userAPI, getPhotoUrl } from '../services/api'
 import { useAuthStore } from '../store/authStore'
 import type { User, UserPhoto } from '../types'
 
@@ -19,6 +19,12 @@ export default function EditProfile() {
   const [birthdate, setBirthdate] = useState(user?.birthdate?.split('T')[0] || '')
   const [photos, setPhotos] = useState<UserPhoto[]>(user?.photos || [])
   const [isUploading, setIsUploading] = useState(false)
+  const [genderPreference, setGenderPreference] = useState<('male' | 'female' | 'other')[]>(
+    user?.preferences?.gender_preference || ['male']
+  )
+  const [minAge, setMinAge] = useState(user?.preferences?.min_age ?? 18)
+  const [maxAge, setMaxAge] = useState(user?.preferences?.max_age ?? 50)
+  const [maxDistance, setMaxDistance] = useState(user?.preferences?.max_distance ?? 100)
 
   const updateMutation = useMutation({
     mutationFn: (data: Partial<User>) => userAPI.updateProfile(data),
@@ -75,6 +81,12 @@ export default function EditProfile() {
       name,
       bio,
       gender,
+      preferences: {
+        min_age: minAge,
+        max_age: maxAge,
+        max_distance: maxDistance,
+        gender_preference: genderPreference,
+      },
     }
 
     if (birthdate) {
@@ -115,7 +127,7 @@ export default function EditProfile() {
             {photos.map((photo, index) => (
               <div key={photo.id} className="relative aspect-[3/4] rounded-xl overflow-hidden">
                 <img
-                  src={photo.photo_url}
+                  src={getPhotoUrl(photo.photo_url)}
                   alt={`Photo ${index + 1}`}
                   className="w-full h-full object-cover"
                 />
@@ -236,7 +248,8 @@ export default function EditProfile() {
                   type="number"
                   min={18}
                   max={100}
-                  defaultValue={user?.preferences?.min_age || 18}
+                  value={minAge}
+                  onChange={(e) => setMinAge(Number(e.target.value) || 18)}
                   className="input-field w-20 text-center"
                 />
                 <span className="text-white/40">to</span>
@@ -244,7 +257,8 @@ export default function EditProfile() {
                   type="number"
                   min={18}
                   max={100}
-                  defaultValue={user?.preferences?.max_age || 50}
+                  value={maxAge}
+                  onChange={(e) => setMaxAge(Number(e.target.value) || 50)}
                   className="input-field w-20 text-center"
                 />
               </div>
@@ -256,7 +270,8 @@ export default function EditProfile() {
                 type="number"
                 min={1}
                 max={500}
-                defaultValue={user?.preferences?.max_distance || 100}
+                value={maxDistance}
+                onChange={(e) => setMaxDistance(Number(e.target.value) || 1)}
                 className="input-field w-24"
               />
             </div>
@@ -265,10 +280,15 @@ export default function EditProfile() {
               <label className="text-white/60 text-sm mb-2 block">Show Me</label>
               <div className="grid grid-cols-3 gap-2">
                 {(['male', 'female', 'other'] as const).map((g) => {
-                  const isSelected = user?.preferences?.gender_preference?.includes(g)
+                  const isSelected = genderPreference.includes(g)
                   return (
                     <button
                       key={g}
+                      onClick={() => {
+                        const next: ('male' | 'female' | 'other')[] =
+                          g === 'other' ? ['male', 'female', 'other'] : [g]
+                        setGenderPreference(next)
+                      }}
                       className={`py-3 rounded-xl border transition-colors capitalize ${
                         isSelected
                           ? 'bg-primary-500/20 border-primary-500 text-primary-400'
