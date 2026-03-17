@@ -47,6 +47,7 @@ services:
       - JWT_EXPIRE_HOURS=24
       - STORAGE_TYPE=local
       - LOCAL_STORAGE_DIR=/app/uploads
+      - NSFW_SERVICE_URL=http://nsfw-service:8000
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - GOOGLE_REDIRECT_URL=${GOOGLE_REDIRECT_URL:-http://localhost/api/auth/oauth/google/callback}
@@ -67,6 +68,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - tinder_network
+
+  nsfw-service:
+    build:
+      context: ./nsfw-service
+      dockerfile: Dockerfile
+    container_name: tinder_nsfw
+    ports:
+      - "8000:8000"
     networks:
       - tinder_network
 

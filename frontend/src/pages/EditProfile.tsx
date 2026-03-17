@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { isAxiosError } from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
@@ -50,17 +51,27 @@ export default function EditProfile() {
     setIsUploading(true)
     try {
       const result = await userAPI.uploadPhoto(file)
-      setPhotos([...photos, { 
-        id: result.id, 
-        photo_url: result.photo_url,
-        user_id: user?.id || '',
-        display_order: photos.length,
-        is_approved: true,
-        created_at: new Date().toISOString()
-      }])
+      setPhotos([
+        ...photos,
+        {
+          id: result.id,
+          photo_url: result.photo_url,
+          user_id: user?.id || '',
+          display_order: photos.length,
+          is_approved: true,
+          created_at: new Date().toISOString(),
+        },
+      ])
       toast.success('Photo uploaded!')
-    } catch {
-      toast.error('Failed to upload photo')
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const message =
+          (error.response?.data as { error?: string } | undefined)?.error ||
+          'Failed to upload photo'
+        toast.error(message)
+      } else {
+        toast.error('Failed to upload photo')
+      }
     } finally {
       setIsUploading(false)
     }

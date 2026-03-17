@@ -88,6 +88,11 @@ func (h *UserHandler) UploadPhoto(c *gin.Context) {
 
 	photoURL, err := h.storageService.UploadFile(file, userID)
 	if err != nil {
+		if errors.Is(err, services.ErrNSFWContent) {
+			utils.BadRequest(c, "Image contains NSFW content and cannot be uploaded")
+			return
+		}
+
 		utils.InternalError(c, "Failed to upload photo")
 		return
 	}

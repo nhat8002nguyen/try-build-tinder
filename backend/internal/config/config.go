@@ -14,6 +14,8 @@ type Config struct {
 	JWTSecret      string
 	JWTExpireHours int
 
+	NSFWServiceURL string
+
 	GoogleClientID     string
 	GoogleClientSecret string
 	GoogleRedirectURL  string
@@ -45,6 +47,8 @@ func Load() *Config {
 		RedisURL:       getEnv("REDIS_URL", "redis://localhost:6379"),
 		JWTSecret:      getEnv("JWT_SECRET", "your-super-secret-jwt-key"),
 		JWTExpireHours: jwtExpire,
+
+		NSFWServiceURL: getEnv("NSFW_SERVICE_URL", ""),
 
 		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),

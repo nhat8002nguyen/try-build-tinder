@@ -1,9 +1,13 @@
 package services
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,15 +17,200 @@ import (
 	"github.com/tinder-clone/backend/internal/config"
 )
 
+var ErrNSFWContent = errors.New("image contains disallowed NSFW content")
+
+type NSFWClient struct {
+	httpClient *http.Client
+	baseURL    string
+}
+
+type debugLogEntry struct {
+	SessionID    string         `json:"sessionId,omitempty"`
+	RunID        string         `json:"runId,omitempty"`
+	HypothesisID string         `json:"hypothesisId,omitempty"`
+	Location     string         `json:"location,omitempty"`
+	Message      string         `json:"message,omitempty"`
+	Data         map[string]any `json:"data,omitempty"`
+	Timestamp    int64          `json:"timestamp,omitempty"`
+}
+
+// #region agent log
+func writeNSFWDebugLog(hypothesisID, location, message string, data map[string]any) {
+	entry := debugLogEntry{
+		SessionID:    "0f9762",
+		RunID:        "initial",
+		HypothesisID: hypothesisID,
+		Location:     location,
+		Message:      message,
+		Data:         data,
+		Timestamp:    time.Now().UnixMilli(),
+	}
+
+	payload, err := json.Marshal(entry)
+	if err != nil {
+		return
+	}
+
+	req, err := http.NewRequest(
+		http.MethodPost,
+		"http://host.docker.internal:7586/ingest/e28d96d1-7f10-4f83-951e-74e65210567a",
+		bytes.NewReader(payload),
+	)
+	if err != nil {
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Debug-Session-Id", "0f9762")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+}
+
+// #endregion
+
+func NewNSFWClient(baseURL string) *NSFWClient {
+	if baseURL == "" {
+		return nil
+	}
+
+	return &NSFWClient{
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
+		baseURL: strings.TrimRight(baseURL, "/"),
+	}
+}
+
+func (c *NSFWClient) Classify(file *multipart.FileHeader) (bool, float64, error) {
+	if c == nil {
+		return false, 0, nil
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		return false, 0, fmt.Errorf("failed to open uploaded file for nsfw scan: %w", err)
+	}
+	defer src.Close()
+
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+
+	part, err := writer.CreateFormFile("file", file.Filename)
+	if err != nil {
+		return false, 0, fmt.Errorf("failed to create multipart form file: %w", err)
+	}
+
+	if _, err := io.Copy(part, src); err != nil {
+		return false, 0, fmt.Errorf("failed to copy file to multipart form: %w", err)
+	}
+
+	if err := writer.Close(); err != nil {
+		return false, 0, fmt.Errorf("failed to finalize multipart form: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, c.baseURL+"/classify", &buf)
+	if err != nil {
+		writeNSFWDebugLog(
+			"A",
+			"storage.go:nsfw-classify",
+			"failed_to_create_nsfw_request",
+			map[string]any{"error": err.Error()},
+		)
+		return false, 0, fmt.Errorf("failed to create nsfw request: %w", err)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		writeNSFWDebugLog(
+			"A",
+			"storage.go:nsfw-classify",
+			"failed_to_call_nsfw_service",
+			map[string]any{"error": err.Error()},
+		)
+		return false, 0, fmt.Errorf("failed to call nsfw service: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusServiceUnavailable {
+		writeNSFWDebugLog(
+			"A",
+			"storage.go:nsfw-classify",
+			"nsfw_service_unavailable",
+			map[string]any{"status_code": resp.StatusCode},
+		)
+		return false, 0, nil
+	}
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		writeNSFWDebugLog(
+			"A",
+			"storage.go:nsfw-classify",
+			"nsfw_service_http_error",
+			map[string]any{"status_code": resp.StatusCode, "body": strings.TrimSpace(string(body))},
+		)
+		return false, 0, fmt.Errorf("nsfw service returned status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+
+	var result struct {
+		IsNSFW bool    `json:"is_nsfw"`
+		Label  string  `json:"label"`
+		Score  float64 `json:"score"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		writeNSFWDebugLog(
+			"B",
+			"storage.go:nsfw-classify",
+			"failed_to_decode_nsfw_response",
+			map[string]any{"error": err.Error()},
+		)
+		return false, 0, fmt.Errorf("failed to decode nsfw response: %w", err)
+	}
+
+	writeNSFWDebugLog(
+		"B",
+		"storage.go:nsfw-classify",
+		"nsfw_classification_result",
+		map[string]any{
+			"is_nsfw": result.IsNSFW,
+			"label":   result.Label,
+			"score":   result.Score,
+			"file":    file.Filename,
+		},
+	)
+
+	return result.IsNSFW, result.Score, nil
+}
+
 type StorageService struct {
-	cfg *config.Config
+	cfg        *config.Config
+	nsfwClient *NSFWClient
 }
 
 func NewStorageService(cfg *config.Config) *StorageService {
-	return &StorageService{cfg: cfg}
+	return &StorageService{
+		cfg:        cfg,
+		nsfwClient: NewNSFWClient(cfg.NSFWServiceURL),
+	}
 }
 
 func (s *StorageService) UploadFile(file *multipart.FileHeader, userID uuid.UUID) (string, error) {
+	if s.nsfwClient != nil {
+		isNSFW, _, err := s.nsfwClient.Classify(file)
+		if err != nil {
+			return "", fmt.Errorf("failed to classify image: %w", err)
+		}
+		if isNSFW {
+			return "", ErrNSFWContent
+		}
+	}
+
 	if s.cfg.StorageType == "s3" {
 		return s.uploadToS3(file, userID)
 	}
